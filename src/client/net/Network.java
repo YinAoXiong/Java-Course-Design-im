@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 /**
@@ -14,7 +15,7 @@ import java.util.Iterator;
  * @create: 2018-05-23 21:00
  **/
 public class Network implements Runnable{
-    private Collection listeners;
+    private CopyOnWriteArrayList<NetworkListener> listeners=new CopyOnWriteArrayList<>();
     private Socket socket=null;
     private DataInputStream dataInputStream=null;
     private DataOutputStream dataOutputStream=null;
@@ -33,6 +34,7 @@ public class Network implements Runnable{
     public void sendMessage(String message){
         try {
             dataOutputStream.writeUTF(message);
+            dataOutputStream.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -41,9 +43,12 @@ public class Network implements Runnable{
     @Override
     public void run() {
         try{
-            String message=dataInputStream.readUTF();
-            //触发网络事件
-            messageComming(message);
+            while (true){
+                String message=dataInputStream.readUTF();
+                //触发网络事件
+                messageComming(message);
+            }
+
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -58,8 +63,6 @@ public class Network implements Runnable{
      * @date: 2018/5/25
      */
     public void addNetworkListener(NetworkListener listener){
-        if(listeners==null)
-            listeners=new HashSet();
         listeners.add(listener);
     }
 
@@ -78,12 +81,12 @@ public class Network implements Runnable{
 
     /**
     * @description: 触发网络事件
-    * @param: [message]
+    * @param: [Message]
     * @return: void
     * @author: 尹傲雄 yinaoxiong@gmail.com
     * @date: 2018/5/25
     */
-    protected void messageComming(String message){
+    private void messageComming(String message){
         if(listeners==null)
             return;
         NetworkEvent networkEvent=new NetworkEvent(this,message);
@@ -97,9 +100,8 @@ public class Network implements Runnable{
      * @author: 尹傲雄 yinaoxiong@gmail.com
      * @date: 2018/5/25
      */
-    private void notifyLIsteners(NetworkEvent event){
-        for (Object listener1 : listeners) {
-            NetworkListener listener = (NetworkListener) listener1;
+    private synchronized void notifyLIsteners(NetworkEvent event){
+        for (NetworkListener listener : listeners) {
             listener.networkEvent(event);
         }
     }
