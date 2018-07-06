@@ -70,6 +70,7 @@ public class LoginFrame extends JFrame implements ActionListener,NetworkListener
             Login login=new Login();
             login.setPassword(password);
             login.setUserID(Integer.parseInt(account));
+            RunTimePublicData.account=login.getUserID();
             String data=JSON.toJSONString(login);
             information.setData(data);
             String sentData=JSON.toJSONString(information);
@@ -100,7 +101,6 @@ public class LoginFrame extends JFrame implements ActionListener,NetworkListener
         if(action.equals("LoginResponce")){
             LoginResponce loginResponce=JSON.parseObject(data,LoginResponce.class);
             if(loginResponce.isLoginSuccess()){
-                RunTimePublicData.account=Integer.parseInt(accountTextField.getText());
                 RunTimePublicData.nickName=loginResponce.getNickName();
                 RunTimePublicData.onlineFriend=loginResponce.getOnlineFriendID();
                 JOptionPane.showMessageDialog(this,"登录成功");
